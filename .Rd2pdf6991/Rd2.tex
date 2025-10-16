@@ -1,0 +1,1460 @@
+\nonstopmode{}
+\documentclass[a4paper]{book}
+\usepackage[times,inconsolata,hyper]{Rd}
+\usepackage{makeidx}
+\makeatletter\@ifl@t@r\fmtversion{2018/04/01}{}{\usepackage[utf8]{inputenc}}\makeatother
+% \usepackage{graphicx} % @USE GRAPHICX@
+\makeindex{}
+\begin{document}
+\chapter*{}
+\begin{center}
+{\textbf{\huge Package `regmedint'}}
+\par\bigskip{\large \today}
+\end{center}
+\ifthenelse{\boolean{Rd@use@hyper}}{\hypersetup{pdftitle = {regmedint: Regression-Based Causal Mediation Analysis with Interaction and Effect Modification Terms}}}{}
+\ifthenelse{\boolean{Rd@use@hyper}}{\hypersetup{pdfauthor = {Kazuki Yoshida; Yi Li}}}{}
+\begin{description}
+\raggedright{}
+\item[Title]\AsIs{Regression-Based Causal Mediation Analysis with Interaction and Effect Modification Terms}
+\item[Version]\AsIs{1.0.1}
+\item[Description]\AsIs{This is an extension of the regression-based causal mediation analysis first proposed by Valeri and VanderWeele (2013) <}\Rhref{https://doi.org/10.1037/a0031034}{doi:10.1037/a0031034}\AsIs{> and Valeri and VanderWeele (2015) <}\Rhref{https://doi.org/10.1097/EDE.0000000000000253}{doi:10.1097/EDE.0000000000000253}\AsIs{>). It supports including effect measure modification by covariates(treatment-covariate and mediator-covariate product terms in mediator and outcome regression models) as proposed by Li et al (2023) <}\Rhref{https://doi.org/10.1097/EDE.0000000000001643}{doi:10.1097/EDE.0000000000001643}\AsIs{>. It also accommodates the original 'SAS' macro and 'PROC CAUSALMED' procedure in 'SAS' when there is no effect measure modification. Linear and logistic models are supported for the mediator model. Linear, logistic, loglinear, Poisson, negative binomial, Cox, and accelerated failure time (exponential and Weibull) models are supported for the outcome model.}
+\item[License]\AsIs{GPL-2}
+\item[Encoding]\AsIs{UTF-8}
+\item[LazyData]\AsIs{true}
+\item[Imports]\AsIs{Deriv,
+MASS,
+Matrix,
+assertthat,
+sandwich,
+survival}
+\item[Suggests]\AsIs{boot,
+furrr,
+future,
+geepack,
+knitr,
+mice,
+mitools,
+modelr,
+purrr,
+rlang,
+rmarkdown,
+stringr,
+testthat,
+tidyverse,
+magic,
+formattable,
+kableExtra}
+\item[RoxygenNote]\AsIs{7.3.3}
+\item[VignetteBuilder]\AsIs{knitr}
+\item[URL]\AsIs{}\url{https://kaz-yos.github.io/regmedint/}\AsIs{}
+\item[BugReports]\AsIs{}\url{https://github.com/kaz-yos/regmedint/issues}\AsIs{}
+\item[Depends]\AsIs{R (>= 2.10)}
+\end{description}
+\Rdcontents{Contents}
+\HeaderA{beta\_hat}{Create a vector of coefficients from the mediator model (mreg)}{beta.Rul.hat}
+%
+\begin{Description}
+This function extracts \code{\LinkA{coef}{coef}} from \code{mreg\_fit} and pads with zeros appropriately to create a named vector consistently having the following elements:
+\code{(Intercept)},
+\code{avar},
+\code{cvar} (this part is eliminated when \code{cvar = NULL}),
+\code{emm\_ac\_mreg} (this part is eliminated when \code{emm\_ac\_mreg = NULL}).
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+beta_hat(mreg, mreg_fit, avar, cvar, emm_ac_mreg = NULL)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{mreg}] A character vector of length 1. Mediator regression type: \code{"linear"} or \code{"logistic"}.
+
+\item[\code{mreg\_fit}] Model fit object for mreg (mediator model).
+
+\item[\code{avar}] A character vector of length 1. Treatment variable name.
+
+\item[\code{cvar}] A character vector of length > 0. Covariate names. Use \code{NULL} if there is no covariate. However, this is a highly suspicious situation. Even if \code{avar} is randomized, \code{mvar} is not. Thus, there are usually some confounder(s) to account for the common cause structure (confounding) between \code{mvar} and \code{yvar}.
+
+\item[\code{emm\_ac\_mreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in treatment-covariate product term in the mediator model.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A named numeric vector of coefficients.
+\end{Value}
+\HeaderA{calc\_myreg}{Return mediation analysis functions given mediator and outcome models specifications.}{calc.Rul.myreg}
+%
+\begin{Description}
+This function returns functions that can be used to calculate the causal effect measures, given the mediator model fit (\code{mreg\_fit}) and the outcome model fit (\code{yreg\_fit}).
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+calc_myreg(
+  mreg,
+  mreg_fit,
+  yreg,
+  yreg_fit,
+  avar,
+  mvar,
+  cvar,
+  emm_ac_mreg,
+  emm_ac_yreg,
+  emm_mc_yreg,
+  interaction
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{mreg}] A character vector of length 1. Mediator regression type: \code{"linear"} or \code{"logistic"}.
+
+\item[\code{mreg\_fit}] Model fit from \code{\LinkA{fit\_mreg}{fit.Rul.mreg}}
+
+\item[\code{yreg}] A character vector of length 1. Outcome regression type: \code{"linear"}, \code{"logistic"}, \code{"loglinear"}, \code{"poisson"}, \code{"negbin"}, \code{"survCox"}, \code{"survAFT\_exp"}, or \code{"survAFT\_weibull"}.
+
+\item[\code{yreg\_fit}] Model fit from \code{\LinkA{fit\_yreg}{fit.Rul.yreg}}
+
+\item[\code{avar}] A character vector of length 1. Treatment variable name.
+
+\item[\code{mvar}] A character vector of length 1. Mediator variable name.
+
+\item[\code{cvar}] A character vector of length > 0. Covariate names. Use \code{NULL} if there is no covariate. However, this is a highly suspicious situation. Even if \code{avar} is randomized, \code{mvar} is not. Thus, there are usually some confounder(s) to account for the common cause structure (confounding) between \code{mvar} and \code{yvar}.
+
+\item[\code{emm\_ac\_mreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in treatment-covariate product term in the mediator model.
+
+\item[\code{emm\_ac\_yreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in treatment-covariate product term in the outcome model.
+
+\item[\code{emm\_mc\_yreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in mediator-covariate product term in outcome model.
+
+\item[\code{interaction}] A logical vector of length 1. The presence of treatment-mediator interaction in the outcome model. Default to TRUE.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A list containing two functions. The first is for calculating point estimates. The second is for calculating the correspoding
+\end{Value}
+\HeaderA{calc\_myreg\_mreg\_linear\_yreg\_linear}{Create calculators for effects and se (mreg linear / yreg linear)}{calc.Rul.myreg.Rul.mreg.Rul.linear.Rul.yreg.Rul.linear}
+%
+\begin{Description}
+Construct functions for the conditional effect estimates and their standard errors in the mreg linear / yreg linear setting. Internally, this function deconstructs model objects and feeds parameter estiamtes to the internal worker functions \code{calc\_myreg\_mreg\_linear\_yreg\_linear\_est} and \code{calc\_myreg\_mreg\_linear\_yreg\_linear\_se}.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+calc_myreg_mreg_linear_yreg_linear(
+  mreg,
+  mreg_fit,
+  yreg,
+  yreg_fit,
+  avar,
+  mvar,
+  cvar,
+  emm_ac_mreg,
+  emm_ac_yreg,
+  emm_mc_yreg,
+  interaction
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{mreg}] A character vector of length 1. Mediator regression type: \code{"linear"} or \code{"logistic"}.
+
+\item[\code{mreg\_fit}] Model fit from \code{\LinkA{fit\_mreg}{fit.Rul.mreg}}
+
+\item[\code{yreg}] A character vector of length 1. Outcome regression type: \code{"linear"}, \code{"logistic"}, \code{"loglinear"}, \code{"poisson"}, \code{"negbin"}, \code{"survCox"}, \code{"survAFT\_exp"}, or \code{"survAFT\_weibull"}.
+
+\item[\code{yreg\_fit}] Model fit from \code{\LinkA{fit\_yreg}{fit.Rul.yreg}}
+
+\item[\code{avar}] A character vector of length 1. Treatment variable name.
+
+\item[\code{mvar}] A character vector of length 1. Mediator variable name.
+
+\item[\code{cvar}] A character vector of length > 0. Covariate names. Use \code{NULL} if there is no covariate. However, this is a highly suspicious situation. Even if \code{avar} is randomized, \code{mvar} is not. Thus, there are usually some confounder(s) to account for the common cause structure (confounding) between \code{mvar} and \code{yvar}.
+
+\item[\code{emm\_ac\_mreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in treatment-covariate product term in the mediator model.
+
+\item[\code{emm\_ac\_yreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in treatment-covariate product term in the outcome model.
+
+\item[\code{emm\_mc\_yreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in mediator-covariate product term in outcome model.
+
+\item[\code{interaction}] A logical vector of length 1. The presence of treatment-mediator interaction in the outcome model. Default to TRUE.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A list containing a function for effect estimates and a function for corresponding standard errors.
+\end{Value}
+\HeaderA{calc\_myreg\_mreg\_linear\_yreg\_logistic}{Create calculators for effects and se (mreg linear / yreg logistic)}{calc.Rul.myreg.Rul.mreg.Rul.linear.Rul.yreg.Rul.logistic}
+%
+\begin{Description}
+Construct functions for the conditional effect estimates and their standard errors in the mreg linear / yreg logistic setting. Internally, this function deconstructs model objects and feeds parameter estimates to the internal worker functions \code{calc\_myreg\_mreg\_linear\_yreg\_logistic\_est} and \code{calc\_myreg\_mreg\_linear\_yreg\_logistic\_se}.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+calc_myreg_mreg_linear_yreg_logistic(
+  mreg,
+  mreg_fit,
+  yreg,
+  yreg_fit,
+  avar,
+  mvar,
+  cvar,
+  emm_ac_mreg,
+  emm_ac_yreg,
+  emm_mc_yreg,
+  interaction
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{mreg}] A character vector of length 1. Mediator regression type: \code{"linear"} or \code{"logistic"}.
+
+\item[\code{mreg\_fit}] Model fit from \code{\LinkA{fit\_mreg}{fit.Rul.mreg}}
+
+\item[\code{yreg}] A character vector of length 1. Outcome regression type: \code{"linear"}, \code{"logistic"}, \code{"loglinear"}, \code{"poisson"}, \code{"negbin"}, \code{"survCox"}, \code{"survAFT\_exp"}, or \code{"survAFT\_weibull"}.
+
+\item[\code{yreg\_fit}] Model fit from \code{\LinkA{fit\_yreg}{fit.Rul.yreg}}
+
+\item[\code{avar}] A character vector of length 1. Treatment variable name.
+
+\item[\code{mvar}] A character vector of length 1. Mediator variable name.
+
+\item[\code{cvar}] A character vector of length > 0. Covariate names. Use \code{NULL} if there is no covariate. However, this is a highly suspicious situation. Even if \code{avar} is randomized, \code{mvar} is not. Thus, there are usually some confounder(s) to account for the common cause structure (confounding) between \code{mvar} and \code{yvar}.
+
+\item[\code{emm\_ac\_mreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in treatment-covariate product term in the mediator model.
+
+\item[\code{emm\_ac\_yreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in treatment-covariate product term in the outcome model.
+
+\item[\code{emm\_mc\_yreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in mediator-covariate product term in outcome model.
+
+\item[\code{interaction}] A logical vector of length 1. The presence of treatment-mediator interaction in the outcome model. Default to TRUE.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A list containing a function for effect estimates and a function for corresponding standard errors.
+\end{Value}
+\HeaderA{calc\_myreg\_mreg\_logistic\_yreg\_linear}{Create calculators for effects and se (mreg logistic / yreg linear)}{calc.Rul.myreg.Rul.mreg.Rul.logistic.Rul.yreg.Rul.linear}
+%
+\begin{Description}
+Construct functions for the conditional effect estimates and their standard errors in the mreg logistic / yreg linear setting. Internally, this function deconstructs model objects and feeds parameter estimates to the internal worker functions \code{calc\_myreg\_mreg\_logistic\_yreg\_linear\_est} and \code{calc\_myreg\_mreg\_logistic\_yreg\_linear\_se}.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+calc_myreg_mreg_logistic_yreg_linear(
+  mreg,
+  mreg_fit,
+  yreg,
+  yreg_fit,
+  avar,
+  mvar,
+  cvar,
+  emm_ac_mreg,
+  emm_ac_yreg,
+  emm_mc_yreg,
+  interaction
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{mreg}] A character vector of length 1. Mediator regression type: \code{"linear"} or \code{"logistic"}.
+
+\item[\code{mreg\_fit}] Model fit from \code{\LinkA{fit\_mreg}{fit.Rul.mreg}}
+
+\item[\code{yreg}] A character vector of length 1. Outcome regression type: \code{"linear"}, \code{"logistic"}, \code{"loglinear"}, \code{"poisson"}, \code{"negbin"}, \code{"survCox"}, \code{"survAFT\_exp"}, or \code{"survAFT\_weibull"}.
+
+\item[\code{yreg\_fit}] Model fit from \code{\LinkA{fit\_yreg}{fit.Rul.yreg}}
+
+\item[\code{avar}] A character vector of length 1. Treatment variable name.
+
+\item[\code{mvar}] A character vector of length 1. Mediator variable name.
+
+\item[\code{cvar}] A character vector of length > 0. Covariate names. Use \code{NULL} if there is no covariate. However, this is a highly suspicious situation. Even if \code{avar} is randomized, \code{mvar} is not. Thus, there are usually some confounder(s) to account for the common cause structure (confounding) between \code{mvar} and \code{yvar}.
+
+\item[\code{emm\_ac\_mreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in treatment-covariate product term in the mediator model.
+
+\item[\code{emm\_ac\_yreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in treatment-covariate product term in the outcome model.
+
+\item[\code{emm\_mc\_yreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in mediator-covariate product term in outcome model.
+
+\item[\code{interaction}] A logical vector of length 1. The presence of treatment-mediator interaction in the outcome model. Default to TRUE.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A list containing a function for effect estimates and a function for corresponding standard errors.
+\end{Value}
+\HeaderA{calc\_myreg\_mreg\_logistic\_yreg\_logistic}{Create calculators for effects and se (mreg logistic / yreg logistic)}{calc.Rul.myreg.Rul.mreg.Rul.logistic.Rul.yreg.Rul.logistic}
+%
+\begin{Description}
+Construct functions for the conditional effect estimates and their standard errors in the mreg logistic / yreg logistic setting. Internally, this function deconstructs model objects and feeds parameter estimates to the internal worker functions \code{calc\_myreg\_mreg\_logistic\_yreg\_logistic\_est} and \code{calc\_myreg\_mreg\_logistic\_yreg\_logistic\_se}.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+calc_myreg_mreg_logistic_yreg_logistic(
+  mreg,
+  mreg_fit,
+  yreg,
+  yreg_fit,
+  avar,
+  mvar,
+  cvar,
+  emm_ac_mreg,
+  emm_ac_yreg,
+  emm_mc_yreg,
+  interaction
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{mreg}] A character vector of length 1. Mediator regression type: \code{"linear"} or \code{"logistic"}.
+
+\item[\code{mreg\_fit}] Model fit from \code{\LinkA{fit\_mreg}{fit.Rul.mreg}}
+
+\item[\code{yreg}] A character vector of length 1. Outcome regression type: \code{"linear"}, \code{"logistic"}, \code{"loglinear"}, \code{"poisson"}, \code{"negbin"}, \code{"survCox"}, \code{"survAFT\_exp"}, or \code{"survAFT\_weibull"}.
+
+\item[\code{yreg\_fit}] Model fit from \code{\LinkA{fit\_yreg}{fit.Rul.yreg}}
+
+\item[\code{avar}] A character vector of length 1. Treatment variable name.
+
+\item[\code{mvar}] A character vector of length 1. Mediator variable name.
+
+\item[\code{cvar}] A character vector of length > 0. Covariate names. Use \code{NULL} if there is no covariate. However, this is a highly suspicious situation. Even if \code{avar} is randomized, \code{mvar} is not. Thus, there are usually some confounder(s) to account for the common cause structure (confounding) between \code{mvar} and \code{yvar}.
+
+\item[\code{emm\_ac\_mreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in treatment-covariate product term in the mediator model.
+
+\item[\code{emm\_ac\_yreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in treatment-covariate product term in the outcome model.
+
+\item[\code{emm\_mc\_yreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in mediator-covariate product term in outcome model.
+
+\item[\code{interaction}] A logical vector of length 1. The presence of treatment-mediator interaction in the outcome model. Default to TRUE.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A list containing a function for effect estimates and a function for corresponding standard errors.
+\end{Value}
+\HeaderA{coef.regmedint}{Extract point estimates.}{coef.regmedint}
+%
+\begin{Description}
+Extract point estimates evaluated at \code{a0}, \code{a1}, \code{m\_cde}, and \code{c\_cond}.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+## S3 method for class 'regmedint'
+coef(object, a0 = NULL, a1 = NULL, m_cde = NULL, c_cond = NULL, ...)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{object}] An object of the \code{\LinkA{regmedint}{regmedint}} class.
+
+\item[\code{a0}] A numeric vector of length 1
+
+\item[\code{a1}] A numeric vector of length 1
+
+\item[\code{m\_cde}] A numeric vector of length 1 The mediator value at which the controlled direct effect (CDE) conditional on the adjustment covariates is evaluated. If not provided, the default value supplied to the call to \code{\LinkA{regmedint}{regmedint}} will be used. Only the CDE is affected.
+
+\item[\code{c\_cond}] A numeric vector of the same length as \code{cvar}. A set of covariate values at which the conditional natural effects are evaluated.
+
+\item[\code{...}] For compatibility with the generic. Ignored.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A numeric vector of point estimates.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+library(regmedint)
+data(vv2015)
+regmedint_obj <- regmedint(data = vv2015,
+                           ## Variables
+                           yvar = "y",
+                           avar = "x",
+                           mvar = "m",
+                           cvar = c("c"),
+                           eventvar = "event",
+                           ## Values at which effects are evaluated
+                           a0 = 0,
+                           a1 = 1,
+                           m_cde = 1,
+                           c_cond = 0.5,
+                           ## Model types
+                           mreg = "logistic",
+                           yreg = "survAFT_weibull",
+                           ## Additional specification
+                           interaction = TRUE,
+                           casecontrol = FALSE)
+coef(regmedint_obj)
+## Evaluate at different values
+coef(regmedint_obj, m_cde = 0, c_cond = 1)
+
+\end{ExampleCode}
+\end{Examples}
+\HeaderA{coef.summary\_regmedint}{Extract the result matrix from a summary\_regmedint object.}{coef.summary.Rul.regmedint}
+%
+\begin{Description}
+Extract the result matrix from a summary\_regmedint object.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+## S3 method for class 'summary_regmedint'
+coef(object, ...)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{object}] An object with a class of \code{summary\_regmedint}.
+
+\item[\code{...}] For compatibility with the generic.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A matrix populated with results.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+library(regmedint)
+data(vv2015)
+regmedint_obj <- regmedint(data = vv2015,
+                           ## Variables
+                           yvar = "y",
+                           avar = "x",
+                           mvar = "m",
+                           cvar = c("c"),
+                           eventvar = "event",
+                           ## Values at which effects are evaluated
+                           a0 = 0,
+                           a1 = 1,
+                           m_cde = 1,
+                           c_cond = 0.5,
+                           ## Model types
+                           mreg = "logistic",
+                           yreg = "survAFT_weibull",
+                           ## Additional specification
+                           interaction = TRUE,
+                           casecontrol = FALSE)
+coef(summary(regmedint_obj))
+
+\end{ExampleCode}
+\end{Examples}
+\HeaderA{confint.regmedint}{Confidence intervals for mediation prameter estimates.}{confint.regmedint}
+%
+\begin{Description}
+Construct Wald approximate confidence intervals for the quantities of interest.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+## S3 method for class 'regmedint'
+confint(
+  object,
+  parm = NULL,
+  level = 0.95,
+  a0 = NULL,
+  a1 = NULL,
+  m_cde = NULL,
+  c_cond = NULL,
+  ...
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{object}] An object of the \code{\LinkA{regmedint}{regmedint}} class.
+
+\item[\code{parm}] For compatibility with generic. Ignored.
+
+\item[\code{level}] A numeric vector of length one. Requested confidence level. Defaults to 0.95.
+
+\item[\code{a0}] A numeric vector of length 1
+
+\item[\code{a1}] A numeric vector of length 1
+
+\item[\code{m\_cde}] A numeric vector of length 1 The mediator value at which the controlled direct effect (CDE) conditional on the adjustment covariates is evaluated. If not provided, the default value supplied to the call to \code{\LinkA{regmedint}{regmedint}} will be used. Only the CDE is affected.
+
+\item[\code{c\_cond}] A numeric vector of the same length as \code{cvar}. A set of covariate values at which the conditional natural effects are evaluated.
+
+\item[\code{...}] For compatibility with generic.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A numeric matrix of the lower limit and upper limit.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+library(regmedint)
+data(vv2015)
+regmedint_obj <- regmedint(data = vv2015,
+                           ## Variables
+                           yvar = "y",
+                           avar = "x",
+                           mvar = "m",
+                           cvar = c("c"),
+                           eventvar = "event",
+                           ## Values at which effects are evaluated
+                           a0 = 0,
+                           a1 = 1,
+                           m_cde = 1,
+                           c_cond = 0.5,
+                           ## Model types
+                           mreg = "logistic",
+                           yreg = "survAFT_weibull",
+                           ## Additional specification
+                           interaction = TRUE,
+                           casecontrol = FALSE)
+confint(regmedint_obj)
+## Evaluate at different values
+confint(regmedint_obj, m_cde = 0, c_cond = 1)
+## Change confidence level
+confint(regmedint_obj, m_cde = 0, c_cond = 1, level = 0.99)
+
+\end{ExampleCode}
+\end{Examples}
+\HeaderA{fit\_mreg}{Fit a model for the mediator given the treatment and covariates.}{fit.Rul.mreg}
+%
+\begin{Description}
+\code{\LinkA{lm}{lm}} is called if \code{mreg = "linear"}. \code{\LinkA{glm}{glm}} is called with \code{family = binomial()} if \code{mreg = "logistic"}.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+fit_mreg(mreg, data, avar, mvar, cvar, emm_ac_mreg = NULL)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{mreg}] A character vector of length 1. Mediator regression type: \code{"linear"} or \code{"logistic"}.
+
+\item[\code{data}] Data frame containing the following relevant variables.
+
+\item[\code{avar}] A character vector of length 1. Treatment variable name.
+
+\item[\code{mvar}] A character vector of length 1. Mediator variable name.
+
+\item[\code{cvar}] A character vector of length > 0. Covariate names. Use \code{NULL} if there is no covariate. However, this is a highly suspicious situation. Even if \code{avar} is randomized, \code{mvar} is not. Thus, there are usually some confounder(s) to account for the common cause structure (confounding) between \code{mvar} and \code{yvar}.
+
+\item[\code{emm\_ac\_mreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in treatment-covariate product term in the mediator model.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A regression object of class lm (linear) or glm (logistic)
+\end{Value}
+\HeaderA{fit\_yreg}{Fit a model for the outcome given the treatment, mediator, and covariates.}{fit.Rul.yreg}
+%
+\begin{Description}
+The outcome model type \code{yreg} can be one of the following \code{"linear"}, \code{"logistic"}, \code{"loglinear"} (implemented as modified Poisson), \code{"poisson"}, \code{"negbin"}, \code{"survCox"}, \code{"survAFT\_exp"}, or \code{"survAFT\_weibull"}.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+fit_yreg(
+  yreg,
+  data,
+  yvar,
+  avar,
+  mvar,
+  cvar,
+  emm_ac_yreg = NULL,
+  emm_mc_yreg = NULL,
+  eventvar,
+  interaction
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{yreg}] A character vector of length 1. Outcome regression type: \code{"linear"}, \code{"logistic"}, \code{"loglinear"}, \code{"poisson"}, \code{"negbin"}, \code{"survCox"}, \code{"survAFT\_exp"}, or \code{"survAFT\_weibull"}.
+
+\item[\code{data}] Data frame containing the following relevant variables.
+
+\item[\code{yvar}] A character vector of length 1. Outcome variable name. It should be the time variable for the survival outcome.
+
+\item[\code{avar}] A character vector of length 1. Treatment variable name.
+
+\item[\code{mvar}] A character vector of length 1. Mediator variable name.
+
+\item[\code{cvar}] A character vector of length > 0. Covariate names. Use \code{NULL} if there is no covariate. However, this is a highly suspicious situation. Even if \code{avar} is randomized, \code{mvar} is not. Thus, there are usually some confounder(s) to account for the common cause structure (confounding) between \code{mvar} and \code{yvar}.
+
+\item[\code{emm\_ac\_yreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in treatment-covariate product term in the outcome model.
+
+\item[\code{emm\_mc\_yreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in mediator-covariate product term in outcome model.
+
+\item[\code{eventvar}] An character vector of length 1. Only required for survival outcome regression models. Note that the coding is 1 for event and 0 for censoring, following the R survival package convention.
+
+\item[\code{interaction}] A logical vector of length 1. The presence of treatment-mediator interaction in the outcome model. Default to TRUE.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Details}
+The outcome regression functions to be called are the following:
+\begin{itemize}
+
+\item{} \code{"linear"} \code{\LinkA{lm}{lm}}
+\item{} \code{"logistic"} \code{\LinkA{glm}{glm}}
+\item{} \code{"loglinear"} \code{\LinkA{glm}{glm}} (modified Poisson)
+\item{} \code{"poisson"} \code{\LinkA{glm}{glm}}
+\item{} \code{"negbin"} \code{\LinkA{glm.nb}{glm.nb}}
+\item{} \code{"survCox"} \code{\LinkA{coxph}{coxph}}
+\item{} \code{"survAFT\_exp"} \code{\LinkA{survreg}{survreg}}
+\item{} \code{"survAFT\_weibull"} \code{\LinkA{survreg}{survreg}}
+
+\end{itemize}
+
+\end{Details}
+%
+\begin{Value}
+Model fit object from on of the above regression functions.
+\end{Value}
+\HeaderA{grad\_prop\_med\_yreg\_linear}{Calculate the gradient of the proportion mediated for yreg linear.}{grad.Rul.prop.Rul.med.Rul.yreg.Rul.linear}
+%
+\begin{Description}
+Calculate the gradient of the proportion mediated for yreg linear case.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+grad_prop_med_yreg_linear(pnde, tnie)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{pnde}] A numeric vector of length one. Pure natural direct effect.
+
+\item[\code{tnie}] A numeric vector of length one. Total natural indirect effect.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A numeric vector of length two. Gradient of the proportion mediated with respect to pnde and tnie.
+\end{Value}
+\HeaderA{grad\_prop\_med\_yreg\_logistic}{Calculate the gradient of the proportion mediated for yreg logistic.}{grad.Rul.prop.Rul.med.Rul.yreg.Rul.logistic}
+%
+\begin{Description}
+Calculate the gradient of the proportion mediated for yreg logistic case.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+grad_prop_med_yreg_logistic(pnde, tnie)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{pnde}] A numeric vector of length one. Pure natural direct effect.
+
+\item[\code{tnie}] A numeric vector of length one. Total natural indirect effect.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A numeric vector of length two. Gradient of the proportion mediated with respect to pnde and tnie.
+\end{Value}
+\HeaderA{new\_regmedint}{Low level constructor for a regmedint S3 class object.}{new.Rul.regmedint}
+%
+\begin{Description}
+This is not a user function and meant to be executed within the regmedint function after validatingthe arguments.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+new_regmedint(
+  data,
+  yvar,
+  avar,
+  mvar,
+  cvar,
+  emm_ac_mreg,
+  emm_ac_yreg,
+  emm_mc_yreg,
+  eventvar,
+  a0,
+  a1,
+  m_cde,
+  c_cond,
+  yreg,
+  mreg,
+  interaction,
+  casecontrol
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{data}] Data frame containing the following relevant variables.
+
+\item[\code{yvar}] A character vector of length 1. Outcome variable name. It should be the time variable for the survival outcome.
+
+\item[\code{avar}] A character vector of length 1. Treatment variable name.
+
+\item[\code{mvar}] A character vector of length 1. Mediator variable name.
+
+\item[\code{cvar}] A character vector of length > 0. Covariate names. Use \code{NULL} if there is no covariate. However, this is a highly suspicious situation. Even if \code{avar} is randomized, \code{mvar} is not. Thus, there are usually some confounder(s) to account for the common cause structure (confounding) between \code{mvar} and \code{yvar}.
+
+\item[\code{emm\_ac\_mreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in treatment-covariate product term in the mediator model.
+
+\item[\code{emm\_ac\_yreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in treatment-covariate product term in the outcome model.
+
+\item[\code{emm\_mc\_yreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in mediator-covariate product term in outcome model.
+
+\item[\code{eventvar}] An character vector of length 1. Only required for survival outcome regression models. Note that the coding is 1 for event and 0 for censoring, following the R survival package convention.
+
+\item[\code{a0}] A numeric vector of length 1. The reference level of treatment variable that is considered "untreated" or "unexposed".
+
+\item[\code{a1}] A numeric vector of length 1.
+
+\item[\code{m\_cde}] A numeric vector of length 1. Mediator level at which controlled direct effect is evaluated at.
+
+\item[\code{c\_cond}] A numeric vector of the same length as \code{cvar}. Covariate levels at which natural direct and indirect effects are evaluated at.
+
+\item[\code{yreg}] A character vector of length 1. Outcome regression type: \code{"linear"}, \code{"logistic"}, \code{"loglinear"}, \code{"poisson"}, \code{"negbin"}, \code{"survCox"}, \code{"survAFT\_exp"}, or \code{"survAFT\_weibull"}.
+
+\item[\code{mreg}] A character vector of length 1. Mediator regression type: \code{"linear"} or \code{"logistic"}.
+
+\item[\code{interaction}] A logical vector of length 1. The presence of treatment-mediator interaction in the outcome model. Default to TRUE.
+
+\item[\code{casecontrol}] A logical vector of length 1. Default to FALSE. Whether data comes from a case-control study.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A regmedint object.
+\end{Value}
+\HeaderA{print.regmedint}{print method for regmedint object}{print.regmedint}
+%
+\begin{Description}
+Print the \code{mreg\_fit}, \code{yreg\_fit}, and the mediation analysis effect estimates.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+## S3 method for class 'regmedint'
+print(
+  x,
+  a0 = NULL,
+  a1 = NULL,
+  m_cde = NULL,
+  c_cond = NULL,
+  args_mreg_fit = list(),
+  args_yreg_fit = list(),
+  ...
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] An object of the \code{\LinkA{regmedint}{regmedint}} class.
+
+\item[\code{a0}] A numeric vector of length 1
+
+\item[\code{a1}] A numeric vector of length 1
+
+\item[\code{m\_cde}] A numeric vector of length 1 The mediator value at which the controlled direct effect (CDE) conditional on the adjustment covariates is evaluated. If not provided, the default value supplied to the call to \code{\LinkA{regmedint}{regmedint}} will be used. Only the CDE is affected.
+
+\item[\code{c\_cond}] A numeric vector of the same length as \code{cvar}. A set of covariate values at which the conditional natural effects are evaluated.
+
+\item[\code{args\_mreg\_fit}] A named list of argument to be passed to the method for the \code{mreg\_fit} object.
+
+\item[\code{args\_yreg\_fit}] A named list of argument to be passed to the method for the \code{mreg\_fit} object.
+
+\item[\code{...}] For compatibility with the generic. Ignored.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+Invisibly return the \code{regmedint} class object as is.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+library(regmedint)
+data(vv2015)
+regmedint_obj <- regmedint(data = vv2015,
+                           ## Variables
+                           yvar = "y",
+                           avar = "x",
+                           mvar = "m",
+                           cvar = c("c"),
+                           eventvar = "event",
+                           ## Values at which effects are evaluated
+                           a0 = 0,
+                           a1 = 1,
+                           m_cde = 1,
+                           c_cond = 0.5,
+                           ## Model types
+                           mreg = "logistic",
+                           yreg = "survAFT_weibull",
+                           ## Additional specification
+                           interaction = TRUE,
+                           casecontrol = FALSE)
+## Implicit printing
+regmedint_obj
+## Explicit printing
+print(regmedint_obj)
+## Evaluate at different values
+print(regmedint_obj, m_cde = 0, c_cond = 1)
+
+\end{ExampleCode}
+\end{Examples}
+\HeaderA{print.summary\_regmedint}{Print method for summary objects from \code{\LinkA{summary.regmedint}{summary.regmedint}}}{print.summary.Rul.regmedint}
+%
+\begin{Description}
+Print results contained in a \code{summary\_regmedint} object with additional explanation regarding the evaluation settings.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+## S3 method for class 'summary_regmedint'
+print(x, ...)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] An object of the class \code{summary\_regmedint}.
+
+\item[\code{...}] For compatibility with the generic function.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+Invisibly return the first argument.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+library(regmedint)
+data(vv2015)
+regmedint_obj <- regmedint(data = vv2015,
+                           ## Variables
+                           yvar = "y",
+                           avar = "x",
+                           mvar = "m",
+                           cvar = c("c"),
+                           eventvar = "event",
+                           ## Values at which effects are evaluated
+                           a0 = 0,
+                           a1 = 1,
+                           m_cde = 1,
+                           c_cond = 0.5,
+                           ## Model types
+                           mreg = "logistic",
+                           yreg = "survAFT_weibull",
+                           ## Additional specification
+                           interaction = TRUE,
+                           casecontrol = FALSE)
+## Implicit printing
+summary(regmedint_obj)
+## Explicit printing
+print(summary(regmedint_obj))
+
+\end{ExampleCode}
+\end{Examples}
+\HeaderA{prop\_med\_yreg\_linear}{Calculate the proportion mediated for yreg linear.}{prop.Rul.med.Rul.yreg.Rul.linear}
+%
+\begin{Description}
+Calculate the proportion mediated on the mean difference scale.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+prop_med_yreg_linear(pnde, tnie)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{pnde}] Pure natural direct effect.
+
+\item[\code{tnie}] Total natural indirect effect.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+Proportion mediated value.
+\end{Value}
+\HeaderA{prop\_med\_yreg\_logistic}{Calculate the proportion mediated for yreg logistic.}{prop.Rul.med.Rul.yreg.Rul.logistic}
+%
+\begin{Description}
+Calculate the approximate proportion mediated on the risk difference scale.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+prop_med_yreg_logistic(pnde, tnie)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{pnde}] Pure natural direct effect on the log scale.
+
+\item[\code{tnie}] Total natural indirect effect on the log scale.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+Proportion mediated value.
+\end{Value}
+\HeaderA{regmedint}{Conduct regression-based causal mediation analysis}{regmedint}
+%
+\begin{Description}
+This is a user-interface for regression-based causal mediation analysis as described in Valeri \& VanderWeele 2013 and Valeri \& VanderWeele 2015.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+regmedint(
+  data,
+  yvar,
+  avar,
+  mvar,
+  cvar,
+  emm_ac_mreg = NULL,
+  emm_ac_yreg = NULL,
+  emm_mc_yreg = NULL,
+  eventvar = NULL,
+  a0,
+  a1,
+  m_cde,
+  c_cond,
+  mreg,
+  yreg,
+  interaction = TRUE,
+  casecontrol = FALSE,
+  na_omit = FALSE
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{data}] Data frame containing the following relevant variables.
+
+\item[\code{yvar}] A character vector of length 1. Outcome variable name. It should be the time variable for the survival outcome.
+
+\item[\code{avar}] A character vector of length 1. Treatment variable name.
+
+\item[\code{mvar}] A character vector of length 1. Mediator variable name.
+
+\item[\code{cvar}] A character vector of length > 0. Covariate names. Use \code{NULL} if there is no covariate. However, this is a highly suspicious situation. Even if \code{avar} is randomized, \code{mvar} is not. Thus, there are usually some confounder(s) to account for the common cause structure (confounding) between \code{mvar} and \code{yvar}.
+
+\item[\code{emm\_ac\_mreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in treatment-covariate product term in the mediator model.
+
+\item[\code{emm\_ac\_yreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in treatment-covariate product term in the outcome model.
+
+\item[\code{emm\_mc\_yreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in mediator-covariate product term in outcome model.
+
+\item[\code{eventvar}] An character vector of length 1. Only required for survival outcome regression models. Note that the coding is 1 for event and 0 for censoring, following the R survival package convention.
+
+\item[\code{a0}] A numeric vector of length 1. The reference level of treatment variable that is considered "untreated" or "unexposed".
+
+\item[\code{a1}] A numeric vector of length 1.
+
+\item[\code{m\_cde}] A numeric vector of length 1. Mediator level at which controlled direct effect is evaluated at.
+
+\item[\code{c\_cond}] A numeric vector of the same length as \code{cvar}. Covariate levels at which natural direct and indirect effects are evaluated at.
+
+\item[\code{mreg}] A character vector of length 1. Mediator regression type: \code{"linear"} or \code{"logistic"}.
+
+\item[\code{yreg}] A character vector of length 1. Outcome regression type: \code{"linear"}, \code{"logistic"}, \code{"loglinear"}, \code{"poisson"}, \code{"negbin"}, \code{"survCox"}, \code{"survAFT\_exp"}, or \code{"survAFT\_weibull"}.
+
+\item[\code{interaction}] A logical vector of length 1. The presence of treatment-mediator interaction in the outcome model. Default to TRUE.
+
+\item[\code{casecontrol}] A logical vector of length 1. Default to FALSE. Whether data comes from a case-control study.
+
+\item[\code{na\_omit}] A logical vector of length 1. Default to FALSE. Whether to remove NAs in the columns of interest before fitting the models.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+regmedint object, which is a list containing the mediator regression object, the outcome regression object, and the regression-based mediation results.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+library(regmedint)
+data(vv2015)
+regmedint_obj1 <- regmedint(data = vv2015,
+                            ## Variables
+                            yvar = "y",
+                            avar = "x",
+                            mvar = "m",
+                            cvar = c("c"),
+                            eventvar = "event",
+                            ## Values at which effects are evaluated
+                            a0 = 0,
+                            a1 = 1,
+                            m_cde = 1,
+                            c_cond = 3,
+                            ## Model types
+                            mreg = "logistic",
+                            yreg = "survAFT_weibull",
+                            ## Additional specification
+                            interaction = TRUE,
+                            casecontrol = FALSE)
+summary(regmedint_obj1)
+
+regmedint_obj2 <- regmedint(data = vv2015,
+                            ## Variables
+                            yvar = "y",
+                            avar = "x",
+                            mvar = "m",
+                            cvar = c("c"),
+                            emm_ac_mreg = c("c"), 
+                            emm_ac_yreg = c("c"), 
+                            emm_mc_yreg = c("c"), 
+                            eventvar = "event",
+                            ## Values at which effects are evaluated
+                            a0 = 0,
+                            a1 = 1,
+                            m_cde = 1,
+                            c_cond = 3,
+                            ## Model types
+                            mreg = "logistic",
+                            yreg = "survAFT_weibull",
+                            ## Additional specification
+                            interaction = TRUE,
+                            casecontrol = FALSE)
+summary(regmedint_obj2)
+
+
+
+
+\end{ExampleCode}
+\end{Examples}
+\HeaderA{report\_missing}{Report variables with missing data}{report.Rul.missing}
+%
+\begin{Description}
+Report the number of missing observations for each variables of interest relevant for the analysis
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+report_missing(data, yvar, avar, mvar, cvar, eventvar)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{data}] Data frame containing the following relevant variables.
+
+\item[\code{yvar}] A character vector of length 1. Outcome variable name. It should be the time variable for the survival outcome.
+
+\item[\code{avar}] A character vector of length 1. Treatment variable name.
+
+\item[\code{mvar}] A character vector of length 1. Mediator variable name.
+
+\item[\code{cvar}] A character vector of length > 0. Covariate names. Use \code{NULL} if there is no covariate. However, this is a highly suspicious situation. Even if \code{avar} is randomized, \code{mvar} is not. Thus, there are usually some confounder(s) to account for the common cause structure (confounding) between \code{mvar} and \code{yvar}.
+
+\item[\code{eventvar}] An character vector of length 1. Only required for survival outcome regression models. Note that the coding is 1 for event and 0 for censoring, following the R survival package convention.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+No return value, called for side effects.
+\end{Value}
+\HeaderA{summary.regmedint}{summary method for regmedint object}{summary.regmedint}
+%
+\begin{Description}
+Summarize the \code{mreg\_fit}, \code{yreg\_fit}, and the mediation analysis effect estimates.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+## S3 method for class 'regmedint'
+summary(
+  object,
+  a0 = NULL,
+  a1 = NULL,
+  m_cde = NULL,
+  c_cond = NULL,
+  args_mreg_fit = list(),
+  args_yreg_fit = list(),
+  exponentiate = FALSE,
+  level = 0.95,
+  ...
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{object}] An object of the \code{\LinkA{regmedint}{regmedint}} class.
+
+\item[\code{a0}] A numeric vector of length 1
+
+\item[\code{a1}] A numeric vector of length 1
+
+\item[\code{m\_cde}] A numeric vector of length 1 The mediator value at which the controlled direct effect (CDE) conditional on the adjustment covariates is evaluated. If not provided, the default value supplied to the call to \code{\LinkA{regmedint}{regmedint}} will be used. Only the CDE is affected.
+
+\item[\code{c\_cond}] A numeric vector of the same length as \code{cvar}. A set of covariate values at which the conditional natural effects are evaluated.
+
+\item[\code{args\_mreg\_fit}] A named list of argument to be passed to the method for the \code{mreg\_fit} object.
+
+\item[\code{args\_yreg\_fit}] A named list of argument to be passed to the method for the \code{mreg\_fit} object.
+
+\item[\code{exponentiate}] Whether to add exponentiated point and confidence limit estimates. When \code{yreg = "linear"}, it is ignored.
+
+\item[\code{level}] Confidence level for the confidence intervals.
+
+\item[\code{...}] For compatibility with the generic. Ignored.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A \code{summary\_regmedint} object, which is a list containing the summary objects of the \code{mreg\_fit} and the \code{yreg\_fit} as well as the mediation analysis results.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+library(regmedint)
+data(vv2015)
+regmedint_obj <- regmedint(data = vv2015,
+                           ## Variables
+                           yvar = "y",
+                           avar = "x",
+                           mvar = "m",
+                           cvar = c("c"),
+                           eventvar = "event",
+                           ## Values at which effects are evaluated
+                           a0 = 0,
+                           a1 = 1,
+                           m_cde = 1,
+                           c_cond = 0.5,
+                           ## Model types
+                           mreg = "logistic",
+                           yreg = "survAFT_weibull",
+                           ## Additional specification
+                           interaction = TRUE,
+                           casecontrol = FALSE)
+## Detailed result with summary
+summary(regmedint_obj)
+## Add exponentiate results for non-linear outcome models
+summary(regmedint_obj, exponentiate = TRUE)
+## Evaluate at different values
+summary(regmedint_obj, m_cde = 0, c_cond = 1)
+## Change confidence level
+summary(regmedint_obj, m_cde = 0, c_cond = 1, level = 0.99)
+
+\end{ExampleCode}
+\end{Examples}
+\HeaderA{summary.regmedint\_mod\_poisson}{Summary with robust sandwich variance estimator for modified Poisson}{summary.regmedint.Rul.mod.Rul.poisson}
+%
+\begin{Description}
+This is a version of \code{\LinkA{summary.glm}{summary.glm}} modified to use the robust variance estimator \code{\LinkA{sandwich}{sandwich}}.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+## S3 method for class 'regmedint_mod_poisson'
+summary(object, ...)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{object}] A model object of the class \code{regmedint\_mod\_poisson}
+
+\item[\code{...}] For compatibility with the generic.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+An object of the class \code{summary.glm}
+\end{Value}
+\HeaderA{theta\_hat}{Create a vector of coefficients from the outcome model (yreg)}{theta.Rul.hat}
+%
+\begin{Description}
+This function extracts \code{\LinkA{coef}{coef}} from \code{yreg\_fit} and 3s with zeros appropriately to create a named vector consistently having the following elements:
+\code{(Intercept)} (a zero element is added for \code{yreg = "survCox"} for which no intercept is estimated (the baseline hazard is left unspecified)),
+\code{avar},
+\code{mvar},
+\code{avar:mvar} (a zero element is added when \code{interaction = FALSE}).
+\code{cvar} (this part is eliminated when \code{cvar = NULL}),
+\code{emm\_ac\_yreg} (this part is eliminated when \code{emm\_ac\_yreg = NULL}),
+\code{emm\_mc\_yreg} (this part is eliminated when \code{emm\_mc\_yreg = NULL}).
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+theta_hat(
+  yreg,
+  yreg_fit,
+  avar,
+  mvar,
+  cvar,
+  emm_ac_yreg = NULL,
+  emm_mc_yreg = NULL,
+  interaction
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{yreg}] A character vector of length 1. Outcome regression type: \code{"linear"}, \code{"logistic"}, \code{"loglinear"}, \code{"poisson"}, \code{"negbin"}, \code{"survCox"}, \code{"survAFT\_exp"}, or \code{"survAFT\_weibull"}.
+
+\item[\code{yreg\_fit}] Model fit object for yreg (outcome model).
+
+\item[\code{avar}] A character vector of length 1. Treatment variable name.
+
+\item[\code{mvar}] A character vector of length 1. Mediator variable name.
+
+\item[\code{cvar}] A character vector of length > 0. Covariate names. Use \code{NULL} if there is no covariate. However, this is a highly suspicious situation. Even if \code{avar} is randomized, \code{mvar} is not. Thus, there are usually some confounder(s) to account for the common cause structure (confounding) between \code{mvar} and \code{yvar}.
+
+\item[\code{emm\_ac\_yreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in treatment-covariate product term in the outcome model.
+
+\item[\code{emm\_mc\_yreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in mediator-covariate product term in outcome model.
+
+\item[\code{interaction}] A logical vector of length 1. The presence of treatment-mediator interaction in the outcome model. Default to TRUE.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A named numeric vector of coefficients.
+\end{Value}
+\HeaderA{validate\_args}{Validate arguments to regmedint before passing to other functions}{validate.Rul.args}
+%
+\begin{Description}
+Internal functions (usually) do not validate arguments, thus, we need to make sure informative errors are raised when the arguments are not safe for subsequent computation.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+validate_args(
+  data,
+  yvar,
+  avar,
+  mvar,
+  cvar,
+  emm_ac_mreg,
+  emm_ac_yreg,
+  emm_mc_yreg,
+  eventvar,
+  a0,
+  a1,
+  m_cde,
+  c_cond,
+  mreg,
+  yreg,
+  interaction,
+  casecontrol
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{data}] Data frame containing the following relevant variables.
+
+\item[\code{yvar}] A character vector of length 1. Outcome variable name. It should be the time variable for the survival outcome.
+
+\item[\code{avar}] A character vector of length 1. Treatment variable name.
+
+\item[\code{mvar}] A character vector of length 1. Mediator variable name.
+
+\item[\code{cvar}] A character vector of length > 0. Covariate names. Use \code{NULL} if there is no covariate. However, this is a highly suspicious situation. Even if \code{avar} is randomized, \code{mvar} is not. Thus, there are usually some confounder(s) to account for the common cause structure (confounding) between \code{mvar} and \code{yvar}.
+
+\item[\code{emm\_ac\_mreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in treatment-covariate product term in the mediator model.
+
+\item[\code{emm\_ac\_yreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in treatment-covariate product term in the outcome model.
+
+\item[\code{emm\_mc\_yreg}] A character vector of length > 0. Effect modifiers names. The covariate vector in mediator-covariate product term in outcome model.
+
+\item[\code{eventvar}] An character vector of length 1. Only required for survival outcome regression models. Note that the coding is 1 for event and 0 for censoring, following the R survival package convention.
+
+\item[\code{a0}] A numeric vector of length 1. The reference level of treatment variable that is considered "untreated" or "unexposed".
+
+\item[\code{a1}] A numeric vector of length 1.
+
+\item[\code{m\_cde}] A numeric vector of length 1. Mediator level at which controlled direct effect is evaluated at.
+
+\item[\code{c\_cond}] A numeric vector of the same length as \code{cvar}. Covariate levels at which natural direct and indirect effects are evaluated at.
+
+\item[\code{mreg}] A character vector of length 1. Mediator regression type: \code{"linear"} or \code{"logistic"}.
+
+\item[\code{yreg}] A character vector of length 1. Outcome regression type: \code{"linear"}, \code{"logistic"}, \code{"loglinear"}, \code{"poisson"}, \code{"negbin"}, \code{"survCox"}, \code{"survAFT\_exp"}, or \code{"survAFT\_weibull"}.
+
+\item[\code{interaction}] A logical vector of length 1. The presence of treatment-mediator interaction in the outcome model. Default to TRUE.
+
+\item[\code{casecontrol}] A logical vector of length 1. Default to FALSE. Whether data comes from a case-control study.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+No return value, called for side effects.
+\end{Value}
+\HeaderA{validate\_regmedint}{Validate soundness of a regmedint object.}{validate.Rul.regmedint}
+%
+\begin{Description}
+Check the structure of a proposed regmedint object for soundness.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+validate_regmedint(x)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] A \code{regmedint} object.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+No return value, called for side effects.
+\end{Value}
+\HeaderA{vcov.regmedint}{Extract variance estimates in the vcov form.}{vcov.regmedint}
+%
+\begin{Description}
+Extract variance estimates evaluated at \code{a0}, \code{a1}, \code{m\_cde}, and \code{c\_cond}.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+## S3 method for class 'regmedint'
+vcov(object, a0 = NULL, a1 = NULL, m_cde = NULL, c_cond = NULL, ...)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{object}] An object of the \code{\LinkA{regmedint}{regmedint}} class.
+
+\item[\code{a0}] A numeric vector of length 1
+
+\item[\code{a1}] A numeric vector of length 1
+
+\item[\code{m\_cde}] A numeric vector of length 1 The mediator value at which the controlled direct effect (CDE) conditional on the adjustment covariates is evaluated. If not provided, the default value supplied to the call to \code{\LinkA{regmedint}{regmedint}} will be used. Only the CDE is affected.
+
+\item[\code{c\_cond}] A numeric vector of the same length as \code{cvar}. A set of covariate values at which the conditional natural effects are evaluated.
+
+\item[\code{...}] For compatibility with the generic. Ignored.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A numeric matrix with the diagonals populated with variance estimates. Off-diagnonals are NA since these are not estimated.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+library(regmedint)
+data(vv2015)
+regmedint_obj <- regmedint(data = vv2015,
+                           ## Variables
+                           yvar = "y",
+                           avar = "x",
+                           mvar = "m",
+                           cvar = c("c"),
+                           eventvar = "event",
+                           ## Values at which effects are evaluated
+                           a0 = 0,
+                           a1 = 1,
+                           m_cde = 1,
+                           c_cond = 0.5,
+                           ## Model types
+                           mreg = "logistic",
+                           yreg = "survAFT_weibull",
+                           ## Additional specification
+                           interaction = TRUE,
+                           casecontrol = FALSE)
+vcov(regmedint_obj)
+## Evaluate at different values
+vcov(regmedint_obj, m_cde = 0, c_cond = 1)
+
+\end{ExampleCode}
+\end{Examples}
+\HeaderA{vcov.regmedint\_mod\_poisson}{Robust sandwich variance estimator for modified Poisson}{vcov.regmedint.Rul.mod.Rul.poisson}
+%
+\begin{Description}
+Provide robust sandwich variance-covariance estimate using \code{\LinkA{sandwich}{sandwich}}.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+## S3 method for class 'regmedint_mod_poisson'
+vcov(object, ...)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{object}] A model object of the class \code{regmedint\_mod\_poisson}
+
+\item[\code{...}] For compatibility with the generic.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A variance-covariance matrix using the \code{\LinkA{sandwich}{sandwich}}.
+\end{Value}
+\HeaderA{vv2015}{Example dataset from Valeri and VanderWeele 2015.}{vv2015}
+\keyword{datasets}{vv2015}
+%
+\begin{Description}
+An example dataset from Valeri and VanderWeele (2015) <doi:10.1097/EDE.0000000000000253>.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+vv2015
+\end{verbatim}
+\end{Usage}
+%
+\begin{Format}
+A tibble with 100 rows and 7 variables:
+\begin{description}
+
+\item[id] Positive integer id.
+\item[x] Binary treatment assignment variable.
+\item[m] Binary mediator variable.
+\item[y] Time to event outcome variable.
+\item[cens] Binary censoring indicator. Censored is 1.
+\item[c] Continuous confounder variable.
+\item[event] Binary event indicator. Event is 1.
+
+\end{description}
+
+\end{Format}
+%
+\begin{Source}
+\url{https://www.hsph.harvard.edu/tyler-vanderweele/tools-and-tutorials/}
+\end{Source}
+\printindex{}
+\end{document}

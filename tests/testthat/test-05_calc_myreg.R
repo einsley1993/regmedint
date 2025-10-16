@@ -109,28 +109,31 @@ describe("calc_myreg", {
                              emm_mc_yreg = NULL,
                              interaction = TRUE,
                              eventvar = NULL)
-        with_mock(
-            ## Mock
-            ## https://github.com/r-lib/testthat/issues/734
-            "regmedint:::calc_myreg_mreg_linear_yreg_linear" =
-                function(...) {
-                    message("calc_myreg_mreg_linear_yreg_linear was called!")
-                },
-            ## Body
-            {
-                expect_message(calc_myreg(mreg = "linear",
-                                          mreg_fit = mreg_fit,
-                                          yreg = "linear",
-                                          yreg_fit = yreg_fit,
-                                          avar = "trt",
-                                          mvar = "bili",
-                                          cvar = NULL,
-                                          emm_ac_mreg = NULL,
-                                          emm_ac_yreg = NULL,
-                                          emm_mc_yreg = NULL,
-                                          interaction = TRUE),
-                               regexp = "calc_myreg_mreg_linear_yreg_linear was called!")
-            })
+        with_mocked_bindings(
+  {
+    expect_message(
+      calc_myreg(
+        mreg = "linear",
+        mreg_fit = mreg_fit,
+        yreg = "linear",
+        yreg_fit = yreg_fit,
+        avar = "trt",
+        mvar = "bili",
+        cvar = NULL,
+        emm_ac_mreg = NULL,
+        emm_ac_yreg = NULL,
+        emm_mc_yreg = NULL,
+        interaction = TRUE
+      ),
+      regexp = "calc_myreg_mreg_linear_yreg_linear was called!"
+    )
+  },
+  calc_myreg_mreg_linear_yreg_linear = function(...) {
+    message("calc_myreg_mreg_linear_yreg_linear was called!")
+  },
+  .package = "regmedint"
+)
+
     })
     ##
     it("calls calc_myreg_mreg_linear_yreg_logistic when mreg linear / yreg logistic", {
@@ -150,28 +153,31 @@ describe("calc_myreg", {
                              emm_mc_yreg = NULL,
                              interaction = TRUE,
                              eventvar = NULL)
-        with_mock(
-            ## Mock
-            ## https://github.com/r-lib/testthat/issues/734
-            "regmedint:::calc_myreg_mreg_linear_yreg_logistic" =
-                function(...) {
-                    message("calc_myreg_mreg_linear_yreg_logistic was called!")
-                },
-            ## Body
-            {
-                expect_message(calc_myreg(mreg = "linear",
-                                          mreg_fit = mreg_fit,
-                                          yreg = "logistic",
-                                          yreg_fit = yreg_fit,
-                                          avar = "trt",
-                                          mvar = "bili",
-                                          cvar = NULL,
-                                          emm_ac_mreg = NULL,
-                                          emm_ac_yreg = NULL,
-                                          emm_mc_yreg = NULL,
-                                          interaction = TRUE),
-                               regexp = "calc_myreg_mreg_linear_yreg_logistic was called!")
-            })
+        with_mocked_bindings(
+  {
+    expect_message(
+      calc_myreg(
+        mreg = "linear",
+        mreg_fit = mreg_fit,
+        yreg = "logistic",
+        yreg_fit = yreg_fit,
+        avar = "trt",
+        mvar = "bili",
+        cvar = NULL,
+        emm_ac_mreg = NULL,
+        emm_ac_yreg = NULL,
+        emm_mc_yreg = NULL,
+        interaction = TRUE
+      ),
+      regexp = "calc_myreg_mreg_linear_yreg_logistic was called!"
+    )
+  },
+  calc_myreg_mreg_linear_yreg_logistic = function(...) {
+    message("calc_myreg_mreg_linear_yreg_logistic was called!")
+  },
+  .package = "regmedint"
+)
+
     })
     ##
     it("calls calc_myreg_mreg_logistic_yreg_linear when mreg logistic / yreg linear", {
@@ -191,28 +197,31 @@ describe("calc_myreg", {
                              emm_mc_yreg = NULL,
                              interaction = TRUE,
                              eventvar = NULL)
-        with_mock(
-            ## Mock
-            ## https://github.com/r-lib/testthat/issues/734
-            "regmedint:::calc_myreg_mreg_logistic_yreg_linear" =
-                function(...) {
-                    message("calc_myreg_mreg_logistic_yreg_linear was called!")
-                },
-            ## Body
-            {
-                expect_message(calc_myreg(mreg = "logistic",
-                                          mreg_fit = mreg_fit,
-                                          yreg = "linear",
-                                          yreg_fit = yreg_fit,
-                                          avar = "trt",
-                                          mvar = "bili",
-                                          cvar = NULL,
-                                          emm_ac_mreg = NULL,
-                                          emm_ac_yreg = NULL,
-                                          emm_mc_yreg = NULL,
-                                          interaction = TRUE),
-                               regexp = "calc_myreg_mreg_logistic_yreg_linear was called!")
-            })
+        with_mocked_bindings(
+  {
+    expect_message(
+      calc_myreg(
+        mreg = "logistic",
+        mreg_fit = mreg_fit,
+        yreg = "linear",
+        yreg_fit = yreg_fit,
+        avar = "trt",
+        mvar = "bili",
+        cvar = NULL,
+        emm_ac_mreg = NULL,
+        emm_ac_yreg = NULL,
+        emm_mc_yreg = NULL,
+        interaction = TRUE
+      ),
+      regexp = "calc_myreg_mreg_logistic_yreg_linear was called!"
+    )
+  },
+  calc_myreg_mreg_logistic_yreg_linear = function(...) {
+    message("calc_myreg_mreg_logistic_yreg_linear was called!")
+  },
+  .package = "regmedint"
+)
+
     })
     ##
     it("calls calc_myreg_mreg_logistic_yreg_logistic when mreg logistic / yreg logistic", {
@@ -232,27 +241,30 @@ describe("calc_myreg", {
                              emm_mc_yreg = NULL,
                              interaction = TRUE,
                              eventvar = NULL)
-        with_mock(
-            ## Mock
-            ## https://github.com/r-lib/testthat/issues/734
-            "regmedint:::calc_myreg_mreg_logistic_yreg_logistic" =
-                function(...) {
-                    message("calc_myreg_mreg_logistic_yreg_logistic was called!")
-                },
-            ## Body
-            {
-                expect_message(calc_myreg(mreg = "logistic",
-                                          mreg_fit = mreg_fit,
-                                          yreg = "logistic",
-                                          yreg_fit = yreg_fit,
-                                          avar = "trt",
-                                          mvar = "bili",
-                                          cvar = NULL,
-                                          emm_ac_mreg = NULL,
-                                          emm_ac_yreg = NULL,
-                                          emm_mc_yreg = NULL,
-                                          interaction = TRUE),
-                               regexp = "calc_myreg_mreg_logistic_yreg_logistic was called!")
-            })
+        with_mocked_bindings(
+  {
+    expect_message(
+      calc_myreg(
+        mreg = "logistic",
+        mreg_fit = mreg_fit,
+        yreg = "logistic",
+        yreg_fit = yreg_fit,
+        avar = "trt",
+        mvar = "bili",
+        cvar = NULL,
+        emm_ac_mreg = NULL,
+        emm_ac_yreg = NULL,
+        emm_mc_yreg = NULL,
+        interaction = TRUE
+      ),
+      regexp = "calc_myreg_mreg_logistic_yreg_logistic was called!"
+    )
+  },
+  calc_myreg_mreg_logistic_yreg_logistic = function(...) {
+    message("calc_myreg_mreg_logistic_yreg_logistic was called!")
+  },
+  .package = "regmedint"
+)
+
     })
 })
