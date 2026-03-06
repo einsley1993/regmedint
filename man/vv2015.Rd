@@ -17,7 +17,7 @@ A tibble with 100 rows and 7 variables:
 }
 }
 \source{
-\url{https://hsph.harvard.edu/research/vanderweele-lab/tools-and-tutorials/}
+\url{https://hsph.harvard.edu/research/vanderweele-group/tools-and-tutorials/}
 }
 \usage{
 vv2015
