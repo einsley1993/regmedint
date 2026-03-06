@@ -3,4 +3,18 @@ Meta
 /doc/
 /Meta/
 .Rd2pdf*
-.Rd2pdf*
+..pdf
+.asst
+
+# Build artifacts
+*.tar.gz
+*.Rcheck/
+*.pdf
+cran-check.txt
+test-all.txt
+lint_package.txt
+/docs/
+
+# OS / editor junk
+.DS_Store
+.Rhistory

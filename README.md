@@ -1,10 +1,7 @@
 regmedint <img src="man/figures/hex.png" align="right" height="140"/>
 =====================================================================
 
-[![R-CMD-check](https://github.com/kaz-yos/regmedint/workflows/R-CMD-check/badge.svg)](https://github.com/kaz-yos/regmedint/actions)
-[![](http://www.r-pkg.org/badges/version/regmedint)](http://www.r-pkg.org/pkg/regmedint)
-[![CRAN RStudio mirror
-downloads](http://cranlogs.r-pkg.org/badges/regmedint)](http://www.r-pkg.org/pkg/regmedint)
+[![R-CMD-check](https://github.com/li-ruijie/regmedint/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/li-ruijie/regmedint/actions/workflows/R-CMD-check.yaml)
 
 This is an extension of the regression-based causal mediation analysis
 first proposed by Valeri and VanderWeele (2013) and Valeri and

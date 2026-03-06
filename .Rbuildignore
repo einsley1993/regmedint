@@ -33,3 +33,6 @@ cran-check.txt
 ^Meta$
 ^data-raw$
 ^\.github$
+^\.Rd2pdf.*$
+^\.\.pdf$
+^\.asst$
